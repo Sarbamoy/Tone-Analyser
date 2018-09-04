@@ -1,6 +1,11 @@
-# Tone-Analyser
+# Tone-Analyser  
 
-Currently contains a very basic implementatin using IBM Watson Tone Analyser.
-Can be run as follows:
-watson_tau="<IBM Username>" watson_tap="<IBM Password>" python3 tone.py
+Uses IBM Watson Tone Analyser and Selenium.  
+Return the "mood points" of a person from the most recent tweet.  
+
+Can be run as follows:  
+python3 tone.py  
+  
+
+
 
