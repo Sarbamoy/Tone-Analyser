@@ -18,7 +18,6 @@ def get_tweets(query):
     @param  moody_user:  twitter user handle
     @return           :  list of tweets(actual)
     """
-    import requests
     import time
     # install selenium https://pypi.python.org/pypi/selenium
     from selenium import webdriver
@@ -32,24 +31,7 @@ def get_tweets(query):
     tweets = [p.text for p in browser.find_elements_by_class_name('tweet-text')]
     return tweets[0]
 
-def tweeper(moody_user):
-    """
-    Return a sample list of tweets.
-
-    @type   s         :  string
-    @param  moody_user:  twitter user handle
-    @return           :  list of tweets(sample)
-    """
-    sample_list = ["Such a smart, talented and kind person "\
-                   "who‘ll be hugely missed.",
-                   "I’m married to the bottle too. Ironically, you’re gonna "\
-                   "want to unscrew it on your wedding night. Congratulations!",
-                   "This one is my most favourite 😍 🙈🙈🙈 😘😘 Have a lo... 😊😊"
-                   ]
-    return sample_list
-
-
-def removenonascii(s):
+def remove_non_ascii(text):
     """
     Remove Non ascii characters.
 
@@ -57,18 +39,16 @@ def removenonascii(s):
     @param  s :  string to be stripped off non-ascii characters
     @return   :  non-ascii stripped string
     """
-    return "".join(i for i in s if ord(i) < 128)
+    return "".join(i for i in text if ord(i) < 128)
 
 def moody(moody_user):
     """
-    Returns a json dump of topmost tweet with mood points.
+    Return a json dump of topmost tweet with mood points.
 
     @type   s          :  string
     @param  moody_user :  twitter user handle
     @return            :  json dump
     """
-    import os
-    import json
     from watson_developer_cloud import ToneAnalyzerV3
     ta_username, ta_password = open("/home/sarbamoy/Desktop/IBM_credentials").read().split()
 
@@ -79,11 +59,64 @@ def moody(moody_user):
 
     texts = get_tweets(moody_user)
 
-    texts = removenonascii(texts)
+    texts = remove_non_ascii(texts)
     print(texts+"\n")
     tone_analysis = tone_analyzer.tone(
-            {'text': texts},
-            'application/json')
-    return(json.dumps(tone_analysis, indent=2))
+        {'text': texts},
+        'application/json')
+    return tone_analysis
 
-print(moody("vancityreynolds"))
+def isemotional(tone):
+    """
+    Return if tone is an emotional one.
+
+    @type   s    :  string
+    @param  tone :  tone
+    @return      :  boolean true or false
+    """
+    if tone in ('anger', 'fear', 'joy', 'sadness'):
+        return True
+
+    return False
+
+def recommend_playlist(moody_user):
+    """
+    Returns a recommended YouTube playlist on basis of mood
+
+    @type   s          :  string
+    @param  moody_user :  twitter user handle
+    @return            :  url of recommended playlist
+    """
+    # The service can return results for the following tone IDs:
+    # `anger`, `fear`, `joy`, and `sadness` (emotional tones); `analytical`, `confident`,
+    # and `tentative` (language tones).
+    tone_json = moody(moody_user)
+    tones_list = tone_json["document_tone"]["tones"]
+
+    mood = ""
+    max_score = -1
+    playlist_url = ""
+    
+    for tone in enumerate(tones_list):
+        if isemotional(tone[1]["tone_id"]) and tone[1]["score"] > max_score:
+            max_score = tone[1]["score"]
+            mood = tone[1]["tone_id"]
+
+    if max_score <= 0:
+        return "Sorry, could not find an emotional tone."
+
+    if mood == "anger":
+        playlist_url = "https://www.youtube.com/watch?v=Q1jE25zn8RU"
+    if mood == "fear":
+        playlist_url = "https://www.youtube.com/watch?v=xo1VInw-SKc&list="\
+        	"PLIeiyBOIivZNqYgeJTdamFTXdQwNzDIiD"
+    if mood == "joy":
+        playlist_url = "https://www.youtube.com/watch?v=LjhCEhWiKXk&list="\
+        	"PL1VuYyZcPYIJTP3W_x0jq9olXviPQlOe1"
+    if mood == "sadness":
+        playlist_url = "https://www.youtube.com/watch?v=aJOTlE1K90k&list="\
+        	"PL4QNnZJr8sRPeLgoOL9t4V-18xRAuqe_f"
+
+    return playlist_url
+
+print(recommend_playlist("vancityreynolds"))
